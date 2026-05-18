@@ -6,6 +6,9 @@ import { Zap, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { login } from "@/lib/auth";
 
+const DEMO_EMAIL = "demo@vcmemo.com";
+const DEMO_PASSWORD = "Demo1234!";
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -37,6 +40,17 @@ export default function LoginPage() {
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Welcome back</h1>
           <p className="text-gray-500 text-sm mt-1">Sign in to your account</p>
+        </div>
+
+        <div className="mb-3">
+          <button
+            type="button"
+            onClick={() => { setEmail(DEMO_EMAIL); setPassword(DEMO_PASSWORD); }}
+            className="w-full flex items-center justify-center gap-2 bg-blue-50 border border-blue-200 text-blue-700 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-100 transition-colors"
+          >
+            Use Demo Account
+          </button>
+          <p className="text-center text-xs text-gray-400 mt-1.5">{DEMO_EMAIL} / {DEMO_PASSWORD}</p>
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">

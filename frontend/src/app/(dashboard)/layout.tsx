@@ -17,7 +17,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!hasToken()) router.replace("/login");
+    // Auth is optional — dashboard is publicly accessible for demo
   }, [router]);
 
   return (
