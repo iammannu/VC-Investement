@@ -6,7 +6,7 @@ import structlog
 import time
 
 from app.config import settings
-from app.core.database import init_db
+from app.core.database import init_db, AsyncSessionLocal
 from app.core.storage import init_storage
 from app.core.vector_store import init_vector_store
 from app.api.v1.router import api_router
@@ -15,6 +15,28 @@ from app.utils.logger import configure_logging
 
 configure_logging()
 logger = structlog.get_logger(__name__)
+
+DEMO_EMAIL = "demo@vcmemo.com"
+DEMO_PASSWORD = "Demo1234!"
+
+
+async def seed_demo_user() -> None:
+    from sqlalchemy import select
+    from app.models.user import User
+    from app.core.security import hash_password
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(select(User).where(User.email == DEMO_EMAIL))
+        if result.scalar_one_or_none() is None:
+            demo_user = User(
+                email=DEMO_EMAIL,
+                hashed_password=hash_password(DEMO_PASSWORD),
+                full_name="Demo User",
+                is_active=True,
+            )
+            session.add(demo_user)
+            await session.commit()
+            logger.info("demo_user_created", email=DEMO_EMAIL)
 
 
 @asynccontextmanager
@@ -26,6 +48,7 @@ async def lifespan(app: FastAPI):
         env=settings.ENVIRONMENT,
     )
     await init_db()
+    await seed_demo_user()
     await init_storage()
     await init_vector_store()
     logger.info("all_services_ready")
