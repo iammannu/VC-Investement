@@ -1,0 +1,41 @@
+# Environment — never commit secrets
+.env
+*.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Alembic generated versions (keep the folder, ignore auto-generated files optionally)
+# backend/alembic/versions/*.py  # uncomment if you want to exclude migrations
+
+# Node
+node_modules/
+.next/
+out/
+npm-debug.log*
+yarn-error.log*
+
+# Docker volumes / data
+postgres_data/
+redis_data/
+qdrant_data/
+minio_data/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
