@@ -10,7 +10,7 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Override with actual DB URL from settings
+# Use async URL from settings (supports both local and Railway DATABASE_URL)
 from app.config import settings
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 

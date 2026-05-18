@@ -1,6 +1,6 @@
 import secrets
 from typing import Optional
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     DEBUG: bool = False
 
+    # ── Server ─────────────────────────────────────────────
+    # Railway injects $PORT; default to 8000 for local dev
+    PORT: int = 8000
+
     # ── Security ───────────────────────────────────────────
     SECRET_KEY: str = secrets.token_urlsafe(32)
     ALGORITHM: str = "HS256"
@@ -25,9 +29,15 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     # ── CORS ───────────────────────────────────────────────
+    # Comma-separated or JSON list. In production add your Vercel URL:
+    # ALLOWED_ORIGINS=http://localhost:3000,https://your-app.vercel.app
     ALLOWED_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:3001"]
 
     # ── Database ───────────────────────────────────────────
+    # Railway provides DATABASE_URL directly (postgres://...).
+    # Set DATABASE_URL in env to override the component-based URL below.
+    DATABASE_URL_DIRECT: Optional[str] = Field(default=None, validation_alias="DATABASE_URL")
+
     POSTGRES_HOST: str = "localhost"
     POSTGRES_PORT: int = 5432
     POSTGRES_DB: str = "memo_db"
@@ -36,6 +46,13 @@ class Settings(BaseSettings):
 
     @property
     def DATABASE_URL(self) -> str:
+        if self.DATABASE_URL_DIRECT:
+            # Railway uses postgres:// — asyncpg requires postgresql+asyncpg://
+            url = self.DATABASE_URL_DIRECT
+            url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+            if not url.startswith("postgresql+asyncpg://"):
+                url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+            return url
         return (
             f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
             f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
@@ -43,6 +60,11 @@ class Settings(BaseSettings):
 
     @property
     def DATABASE_URL_SYNC(self) -> str:
+        if self.DATABASE_URL_DIRECT:
+            # Ensure plain postgresql:// scheme for sync drivers (psycopg2)
+            url = self.DATABASE_URL_DIRECT
+            url = url.replace("postgres://", "postgresql://", 1)
+            return url
         return (
             f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
             f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
@@ -53,9 +75,12 @@ class Settings(BaseSettings):
     REDIS_PORT: int = 6379
     REDIS_DB: int = 0
 
+    # Railway / Upstash provide REDIS_URL directly — takes priority
+    REDIS_URL_DIRECT: Optional[str] = Field(default=None, validation_alias="REDIS_URL")
+
     @property
     def REDIS_URL(self) -> str:
-        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
+        return self.REDIS_URL_DIRECT or f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
 
     # ── Celery ─────────────────────────────────────────────
     CELERY_BROKER_URL: str = "redis://localhost:6379/1"
@@ -78,7 +103,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4o"
     OPENAI_EMBEDDING_MODEL: str = "text-embedding-3-small"
-    OPENAI_BASE_URL: Optional[str] = None  # Set for Qwen/local models
+    OPENAI_BASE_URL: Optional[str] = None
 
     # ── Document Processing ────────────────────────────────
     CHUNK_SIZE: int = 800
